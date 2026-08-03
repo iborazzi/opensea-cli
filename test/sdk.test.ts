@@ -421,6 +421,30 @@ describe("OpenSeaCLI", () => {
         "/api/v2/accounts/wallets/agent%2Fwallet/agent",
       )
     })
+
+    it("makePrivate calls the wallet private PUT endpoint", async () => {
+      mockPut.mockResolvedValue({ address: "0xabc", is_private: true })
+      await sdk.accounts.makePrivate("0xabc")
+      expect(mockPut).toHaveBeenCalledWith(
+        "/api/v2/accounts/wallets/0xabc/private",
+      )
+    })
+
+    it("makePublic calls the wallet public DELETE endpoint", async () => {
+      mockDelete.mockResolvedValue({ address: "0xabc", is_private: false })
+      await sdk.accounts.makePublic("0xabc")
+      expect(mockDelete).toHaveBeenCalledWith(
+        "/api/v2/accounts/wallets/0xabc/private",
+      )
+    })
+
+    it("agentRelationships calls the agent relationships GET endpoint", async () => {
+      mockGet.mockResolvedValue({ public_agent_wallets: [] })
+      await sdk.accounts.agentRelationships("vitalik.eth")
+      expect(mockGet).toHaveBeenCalledWith(
+        "/api/v2/accounts/vitalik.eth/agent-relationships",
+      )
+    })
   })
 
   describe("tokens", () => {

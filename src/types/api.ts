@@ -284,6 +284,14 @@ export type FavoriteResponse = Schemas["FavoriteResponse"]
 export type CancelRequest = Schemas["CancelRequest"]
 export type WalletUnlinkResponse = Schemas["WalletUnlinkResponse"]
 export type WalletAgentStatusResponse = Schemas["WalletAgentStatusResponse"]
+export type WalletVisibilityResponse = Schemas["WalletVisibilityResponse"]
+export type AgentProfileRelationshipsResponse =
+  Schemas["AgentProfileRelationshipsResponse"]
+export type SvmInstructionAccountResponse =
+  Schemas["SvmInstructionAccountResponse"]
+export type SvmInstructionResponse = Schemas["SvmInstructionResponse"]
+export type SvmTransactionDetailsResponse =
+  Schemas["SvmTransactionDetailsResponse"]
 
 export type UpdateProfileSettingsRequest =
   Schemas["UpdateProfileSettingsRequest"]

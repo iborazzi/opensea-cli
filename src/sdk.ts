@@ -3,6 +3,7 @@ import { checkHealth } from "./health.js"
 import type {
   Account,
   AccountResolveResponse,
+  AgentProfileRelationshipsResponse,
   AssetEvent,
   AssetMetadataResponse,
   BatchCollectionsRequest,
@@ -78,6 +79,7 @@ import type {
   ValidateMetadataResponse,
   WalletAgentStatusResponse,
   WalletPnlResponse,
+  WalletVisibilityResponse,
 } from "./types/index.js"
 import type { TransactionResult, WalletAdapter } from "./wallet/index.js"
 import { resolveChainId } from "./wallet/index.js"
@@ -694,6 +696,26 @@ class AccountsAPI {
   async removeAgent(wallet: string): Promise<WalletAgentStatusResponse> {
     return this.client.delete(
       `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/agent`,
+    )
+  }
+
+  async makePrivate(wallet: string): Promise<WalletVisibilityResponse> {
+    return this.client.put(
+      `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/private`,
+    )
+  }
+
+  async makePublic(wallet: string): Promise<WalletVisibilityResponse> {
+    return this.client.delete(
+      `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/private`,
+    )
+  }
+
+  async agentRelationships(
+    addressOrUsername: string,
+  ): Promise<AgentProfileRelationshipsResponse> {
+    return this.client.get(
+      `/api/v2/accounts/${encodeURIComponent(addressOrUsername)}/agent-relationships`,
     )
   }
 

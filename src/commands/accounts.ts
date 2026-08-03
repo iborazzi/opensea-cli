@@ -11,6 +11,7 @@ import type {
   FavoriteResponse,
   TokenBalanceSortBy,
   WalletAgentStatusResponse,
+  WalletVisibilityResponse,
   WatchlistRequest,
 } from "../types/index.js"
 
@@ -55,6 +56,43 @@ export function accountsCommand(
         `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/agent`,
       )
       console.log(formatOutput(result, getFormat()))
+    })
+
+  cmd
+    .command("make-private")
+    .description("Make a registered wallet private (requires write:wallets)")
+    .argument("<wallet>", "Registered wallet address")
+    .action(async (wallet: string) => {
+      const client = getClient()
+      const result = await client.put<WalletVisibilityResponse>(
+        `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/private`,
+      )
+      console.log(formatOutput(result, getFormat()))
+    })
+
+  cmd
+    .command("make-public")
+    .description("Make a registered wallet public (requires write:wallets)")
+    .argument("<wallet>", "Registered wallet address")
+    .action(async (wallet: string) => {
+      const client = getClient()
+      const result = await client.delete<WalletVisibilityResponse>(
+        `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/private`,
+      )
+      console.log(formatOutput(result, getFormat()))
+    })
+
+  cmd
+    .command("agent-relationships")
+    .description("Get public agent ownership relationships for a profile")
+    .argument("<address_or_username>", "Wallet address or OpenSea username")
+    .action(async (addressOrUsername: string) => {
+      const client = getClient()
+      await outputGet(
+        client,
+        getFormat(),
+        `/api/v2/accounts/${encodeURIComponent(addressOrUsername)}/agent-relationships`,
+      )
     })
 
   cmd

@@ -30,6 +30,9 @@ describe("accountsCommand", () => {
     expect(subcommands).toContain("get")
     expect(subcommands).toContain("mark-agent")
     expect(subcommands).toContain("remove-agent")
+    expect(subcommands).toContain("make-private")
+    expect(subcommands).toContain("make-public")
+    expect(subcommands).toContain("agent-relationships")
   })
 
   it("mark-agent marks a registered wallet", async () => {
@@ -57,6 +60,49 @@ describe("accountsCommand", () => {
 
     expect(ctx.mockClient.delete).toHaveBeenCalledWith(
       "/api/v2/accounts/wallets/agent%2Fwallet/agent",
+    )
+  })
+
+  it("make-private marks a registered wallet as private", async () => {
+    ctx.mockClient.put.mockResolvedValue({
+      address: "0xabc",
+      is_private: true,
+    })
+
+    const cmd = accountsCommand(ctx.getClient, ctx.getFormat)
+    await cmd.parseAsync(["make-private", "0xabc"], { from: "user" })
+
+    expect(ctx.mockClient.put).toHaveBeenCalledWith(
+      "/api/v2/accounts/wallets/0xabc/private",
+    )
+  })
+
+  it("make-public marks a registered wallet as public", async () => {
+    ctx.mockClient.delete.mockResolvedValue({
+      address: "0xabc",
+      is_private: false,
+    })
+
+    const cmd = accountsCommand(ctx.getClient, ctx.getFormat)
+    await cmd.parseAsync(["make-public", "0xabc"], { from: "user" })
+
+    expect(ctx.mockClient.delete).toHaveBeenCalledWith(
+      "/api/v2/accounts/wallets/0xabc/private",
+    )
+  })
+
+  it("agent-relationships fetches public agent relationships", async () => {
+    ctx.mockClient.get.mockResolvedValue({
+      public_agent_wallets: [],
+    })
+
+    const cmd = accountsCommand(ctx.getClient, ctx.getFormat)
+    await cmd.parseAsync(["agent-relationships", "vitalik.eth"], {
+      from: "user",
+    })
+
+    expect(ctx.mockClient.get).toHaveBeenCalledWith(
+      "/api/v2/accounts/vitalik.eth/agent-relationships",
     )
   })
 

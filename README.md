@@ -117,9 +117,9 @@ opensea --format table collections stats mfers
 | `whoami` | Show the current wallet, scopes, and scope source |
 | `api request` | Call any API v2 endpoint with the active API key and wallet JWT |
 
-Global options: `--api-key`, `--chain` (default: ethereum), `--format` (json/table/toon), `--base-url`
+This table is a high-level summary; run `opensea --help` for the current command list and [docs/cli-reference.md](docs/cli-reference.md) for the full reference.
 
-Full command reference with all options and flags: [docs/cli-reference.md](docs/cli-reference.md)
+Global options: `--api-key`, `--chain` (default: ethereum), `--format` (json/table/toon), `--base-url`
 
 ## Programmatic SDK
 

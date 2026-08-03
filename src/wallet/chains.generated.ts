@@ -14,6 +14,7 @@ export const CHAIN_IDS: Record<string, number> = {
   monad: 143,
   shape: 360,
   flow: 747,
+  stablechain: 988,
   hyperevm: 999,
   sei: 1329,
   soneium: 1868,

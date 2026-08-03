@@ -1,5 +1,26 @@
 # @opensea/cli
 
+## 1.17.1
+
+### Patch Changes
+
+- 0031eed: Add SDK and CLI support for wallet visibility and agent profile relationships
+
+  - `@opensea/sdk`: add `WalletAuthAPI.makeWalletPrivate`, `WalletAuthAPI.makeWalletPublic`, and `WalletAuthAPI.getAgentProfileRelationships`.
+  - `@opensea/sdk`: export `WalletVisibilityResponse`, `AgentProfileRelationshipsResponse`, `SvmInstructionAccountResponse`, `SvmInstructionResponse`, and `SvmTransactionDetailsResponse` types.
+  - `@opensea/cli`: add `accounts make-private`, `accounts make-public`, and `accounts agent-relationships` commands.
+  - `@opensea/cli`: export the new wallet visibility, agent relationship, and SVM transaction detail types.
+
+- 7d2dbef: Sync OpenAPI spec: add `stablechain` to `ChainIdentifier`, add `Chain.StableChain` (chain id 988) to the SDK and generated chain maps
+- Updated dependencies [0031eed]
+- Updated dependencies [7d2dbef]
+- Updated dependencies [8b7ddd2]
+- Updated dependencies [0031eed]
+- Updated dependencies [f67fbc6]
+  - @opensea/sdk@11.7.1
+  - @opensea/api-types@0.8.7
+  - @opensea/wallet-adapters@0.3.4
+
 ## 1.17.0
 
 ### Minor Changes
