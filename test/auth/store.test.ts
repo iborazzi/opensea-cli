@@ -1,26 +1,28 @@
 import {
   chmodSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   rmSync,
   statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs"
-import { afterEach, describe, expect, test, vi } from "vitest"
-
-const { testHome } = vi.hoisted(() => ({
-  testHome: "/tmp/opensea-cli-auth-store-test",
-}))
-
-vi.mock("node:os", () => ({ homedir: () => testHome }))
-
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import {
+  getAuthDir,
   listTokens,
   loadCurrentToken,
   loadToken,
   saveToken,
 } from "../../src/auth/store.js"
+
+// Each test gets its own config directory via OPENSEA_CONFIG_DIR, so nothing
+// here can read or overwrite the developer's real ~/.opensea/auth.json. A unique
+// directory per test also keeps parallel test files from racing on one path.
+let authDir: string
 
 const baseToken = {
   accessToken: "access",
@@ -32,8 +34,16 @@ const baseToken = {
   authMethod: "oauth" as const,
 }
 
+beforeEach(() => {
+  process.env.OPENSEA_CONFIG_DIR = mkdtempSync(
+    join(tmpdir(), "opensea-auth-store-test-"),
+  )
+  authDir = getAuthDir()
+})
+
 afterEach(() => {
-  rmSync(testHome, { recursive: true, force: true })
+  rmSync(authDir, { recursive: true, force: true })
+  delete process.env.OPENSEA_CONFIG_DIR
   vi.restoreAllMocks()
 })
 
@@ -62,30 +72,25 @@ describe("auth store", () => {
   test.skipIf(process.platform === "win32")(
     "repairs permissive auth directory and file modes",
     () => {
-      mkdirSync(`${testHome}/.opensea`, { recursive: true, mode: 0o755 })
-      writeFileSync(
-        `${testHome}/.opensea/auth.json`,
-        JSON.stringify({ tokens: {} }),
-      )
-      chmodSync(`${testHome}/.opensea`, 0o755)
-      chmodSync(`${testHome}/.opensea/auth.json`, 0o644)
+      mkdirSync(`${authDir}`, { recursive: true, mode: 0o755 })
+      writeFileSync(`${authDir}/auth.json`, JSON.stringify({ tokens: {} }))
+      chmodSync(`${authDir}`, 0o755)
+      chmodSync(`${authDir}/auth.json`, 0o644)
 
       saveToken(baseToken)
 
-      expect(statSync(`${testHome}/.opensea`).mode & 0o777).toBe(0o700)
-      expect(statSync(`${testHome}/.opensea/auth.json`).mode & 0o777).toBe(
-        0o600,
-      )
+      expect(statSync(`${authDir}`).mode & 0o777).toBe(0o700)
+      expect(statSync(`${authDir}/auth.json`).mode & 0o777).toBe(0o600)
     },
   )
 
   test.skipIf(process.platform === "win32")(
     "refuses to follow an auth file symlink",
     () => {
-      const target = `${testHome}/target.json`
-      mkdirSync(`${testHome}/.opensea`, { recursive: true })
+      const target = `${authDir}/target.json`
+      mkdirSync(`${authDir}`, { recursive: true })
       writeFileSync(target, "do not overwrite", { mode: 0o644 })
-      symlinkSync(target, `${testHome}/.opensea/auth.json`)
+      symlinkSync(target, `${authDir}/auth.json`)
 
       expect(() => saveToken(baseToken)).toThrow(
         "auth store path is not a regular file",
@@ -124,9 +129,9 @@ describe("auth store", () => {
 
   test("rejects SIWE stores without session management credentials", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
-    mkdirSync(`${testHome}/.opensea`, { recursive: true })
+    mkdirSync(`${authDir}`, { recursive: true })
     writeFileSync(
-      `${testHome}/.opensea/auth.json`,
+      `${authDir}/auth.json`,
       JSON.stringify({
         currentAddress: "0xabc",
         tokens: {
@@ -148,9 +153,9 @@ describe("auth store", () => {
 
   test("rejects prerelease stores missing requested scopes", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
-    mkdirSync(`${testHome}/.opensea`, { recursive: true })
+    mkdirSync(`${authDir}`, { recursive: true })
     writeFileSync(
-      `${testHome}/.opensea/auth.json`,
+      `${authDir}/auth.json`,
       JSON.stringify({
         currentAddress: "0xabc",
         tokens: {
@@ -174,9 +179,9 @@ describe("auth store", () => {
 
   test("rejects stores whose key does not match the token address", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
-    mkdirSync(`${testHome}/.opensea`, { recursive: true })
+    mkdirSync(`${authDir}`, { recursive: true })
     writeFileSync(
-      `${testHome}/.opensea/auth.json`,
+      `${authDir}/auth.json`,
       JSON.stringify({
         currentAddress: "0xdef",
         tokens: { "0xdef": baseToken },

@@ -13,6 +13,9 @@ export default mergeConfig(
       __VERSION__: JSON.stringify(pkg.version),
     },
     test: {
+      // Redirects the CLI config directory away from the developer's real
+      // ~/.opensea for every test file. See test/setup.ts.
+      setupFiles: ["./test/setup.ts"],
       coverage: {
         provider: "v8",
         reporter: ["text", "lcov"],

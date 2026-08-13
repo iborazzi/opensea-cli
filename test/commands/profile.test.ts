@@ -65,33 +65,6 @@ describe("profileCommand", () => {
     ctx.mockClient.post.mockResolvedValue({ image_url: "https://x" })
 
     const cmd = profileCommand(ctx.getClient, ctx.getFormat)
-    await cmd.parseAsync(
-      [
-        "set-nft-pfp",
-        "0xcontract",
-        "42",
-        "ethereum",
-        "--collection-slug",
-        "cool-cats",
-      ],
-      { from: "user" },
-    )
-
-    expect(ctx.mockClient.post).toHaveBeenCalledWith(
-      "/api/v2/profile/nft-pfp",
-      {
-        contractAddress: "0xcontract",
-        tokenId: "42",
-        chain: "ethereum",
-        collectionSlug: "cool-cats",
-      },
-    )
-  })
-
-  it("set-nft-pfp omits collectionSlug when not provided", async () => {
-    ctx.mockClient.post.mockResolvedValue({ image_url: "https://x" })
-
-    const cmd = profileCommand(ctx.getClient, ctx.getFormat)
     await cmd.parseAsync(["set-nft-pfp", "0xcontract", "42", "ethereum"], {
       from: "user",
     })

@@ -90,30 +90,15 @@ export function profileCommand(
     .argument("<contract_address>", "NFT contract address")
     .argument("<token_id>", "NFT token id")
     .argument("<chain>", "Chain the NFT lives on (e.g. ethereum, base)")
-    .option("--collection-slug <slug>", "Collection slug of the NFT")
-    .action(
-      async (
-        contractAddress: string,
-        tokenId: string,
-        chain: string,
-        options: { collectionSlug?: string },
-      ) => {
-        const client = getClient()
-        const body: SetNftPfpRequest = {
-          contractAddress,
-          tokenId,
-          chain,
-          ...(options.collectionSlug != null
-            ? { collectionSlug: options.collectionSlug }
-            : {}),
-        }
-        const result = await client.post<NftPfpResponse>(
-          "/api/v2/profile/nft-pfp",
-          body,
-        )
-        console.log(formatOutput(result, getFormat()))
-      },
-    )
+    .action(async (contractAddress: string, tokenId: string, chain: string) => {
+      const client = getClient()
+      const body: SetNftPfpRequest = { contractAddress, tokenId, chain }
+      const result = await client.post<NftPfpResponse>(
+        "/api/v2/profile/nft-pfp",
+        body,
+      )
+      console.log(formatOutput(result, getFormat()))
+    })
 
   cmd
     .command("clear-nft-pfp")

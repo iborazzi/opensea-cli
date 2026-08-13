@@ -52,9 +52,7 @@ export function authCommand(
   // --- request-key (existing) ---
   cmd
     .command("request-key")
-    .description(
-      "Request a free-tier API key (rate limited to 3/hour per IP, keys expire after 30 days)",
-    )
+    .description("Request a free-tier API key (keys expire after 7 days)")
     .action(async () => {
       const baseUrl = getBaseUrl() ?? DEFAULT_BASE_URL
       const response = await fetch(`${baseUrl}/api/v2/auth/keys`, {

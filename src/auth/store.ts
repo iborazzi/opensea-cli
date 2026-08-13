@@ -84,31 +84,50 @@ const authStoreSchema = z
   })
   .strict()
 
-const AUTH_DIR = join(homedir(), ".opensea")
-const AUTH_FILE = join(AUTH_DIR, "auth.json")
+/**
+ * Directory holding the auth store, `~/.opensea` by default.
+ *
+ * Set `OPENSEA_CONFIG_DIR` to point somewhere else: a per-run directory in CI or
+ * a test suite, a mounted volume in a container, or a second directory to keep
+ * separate credentials in. Resolved on every call so a process can change it
+ * partway through, and so importing this module never depends on the
+ * environment as it stood at import time.
+ */
+export function getAuthDir(): string {
+  const override = process.env.OPENSEA_CONFIG_DIR
+  if (override && override.trim() !== "") {
+    return override
+  }
+  return join(homedir(), ".opensea")
+}
+
+/** Path of the auth store file inside {@link getAuthDir}. */
+export function getAuthFile(): string {
+  return join(getAuthDir(), "auth.json")
+}
 
 function ensureDir(): void {
+  const authDir = getAuthDir()
   try {
-    if (!existsSync(AUTH_DIR)) {
-      mkdirSync(AUTH_DIR, { recursive: true, mode: 0o700 })
+    if (!existsSync(authDir)) {
+      mkdirSync(authDir, { recursive: true, mode: 0o700 })
     }
-    chmodSync(AUTH_DIR, 0o700)
+    chmodSync(authDir, 0o700)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(`Failed to secure auth directory ${AUTH_DIR}: ${msg}`)
+    throw new Error(`Failed to secure auth directory ${authDir}: ${msg}`)
   }
 }
 
 function readStore(): AuthStore {
-  if (!existsSync(AUTH_FILE)) return { tokens: {} }
-  if (!lstatSync(AUTH_FILE).isFile()) {
-    console.warn(
-      `Warning: ${AUTH_FILE} is not a regular file and was not read.`,
-    )
+  const authFile = getAuthFile()
+  if (!existsSync(authFile)) return { tokens: {} }
+  if (!lstatSync(authFile).isFile()) {
+    console.warn(`Warning: ${authFile} is not a regular file and was not read.`)
     return { tokens: {} }
   }
   try {
-    const data = readFileSync(AUTH_FILE, "utf-8")
+    const data = readFileSync(authFile, "utf-8")
     const store = authStoreSchema.parse(JSON.parse(data))
     for (const [key, token] of Object.entries(store.tokens)) {
       if (key !== normalizeAddress(token.address)) {
@@ -123,7 +142,7 @@ function readStore(): AuthStore {
     return store
   } catch {
     console.warn(
-      `Warning: ${AUTH_FILE} is corrupted or incompatible. Run \`opensea login\` to authenticate again.`,
+      `Warning: ${authFile} is corrupted or incompatible. Run \`opensea login\` to authenticate again.`,
     )
     return { tokens: {} }
   }
@@ -131,20 +150,21 @@ function readStore(): AuthStore {
 
 function writeStore(store: AuthStore): void {
   ensureDir()
+  const authFile = getAuthFile()
   try {
-    if (existsSync(AUTH_FILE)) {
-      if (!lstatSync(AUTH_FILE).isFile()) {
+    if (existsSync(authFile)) {
+      if (!lstatSync(authFile).isFile()) {
         throw new Error("auth store path is not a regular file")
       }
-      chmodSync(AUTH_FILE, 0o600)
+      chmodSync(authFile, 0o600)
     }
-    writeFileSync(AUTH_FILE, JSON.stringify(store, null, 2), { mode: 0o600 })
+    writeFileSync(authFile, JSON.stringify(store, null, 2), { mode: 0o600 })
     // The mode option only applies when writeFileSync creates a file. Repair
     // permissions explicitly when an older or user-created auth file exists.
-    chmodSync(AUTH_FILE, 0o600)
+    chmodSync(authFile, 0o600)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(`Failed to write auth store ${AUTH_FILE}: ${msg}`)
+    throw new Error(`Failed to write auth store ${authFile}: ${msg}`)
   }
 }
 

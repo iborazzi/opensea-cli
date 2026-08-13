@@ -42,6 +42,11 @@ without a value to keep the key out of shell history; a raw key can be passed as
 an option value when necessary. Private-key login requires `--scopes` so the
 agent's capabilities are always explicit.
 
+Set `OPENSEA_CONFIG_DIR` to keep the auth store somewhere other than
+`~/.opensea`, which is what you want for a container with a mounted volume, a CI
+job that should not touch a shared home directory, or a second set of
+credentials held separately.
+
 ## Collections
 
 ```bash

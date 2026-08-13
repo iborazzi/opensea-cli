@@ -1,5 +1,30 @@
 # @opensea/cli
 
+## 1.18.0
+
+### Minor Changes
+
+- 152e3cf: Honor `OPENSEA_CONFIG_DIR` as an override for the auth store location, which defaults to `~/.opensea` as before. Useful for containers with a mounted volume, CI jobs that should not read or write a shared home directory, and holding a second set of credentials separately.
+
+  This also isolates the CLI's own test suite, which until now read the developer's real `~/.opensea/auth.json`: `auth status` asserting `not_authenticated` failed with `expired` on any machine that had ever run `opensea login`, and reproduced for nobody who had not.
+
+### Patch Changes
+
+- Updated dependencies [59f9799]
+- Updated dependencies [c5e2906]
+  - @opensea/sdk@11.8.0
+
+## 1.17.2
+
+### Patch Changes
+
+- b7a4c68: Remove the `--collection-slug` flag from `profile set-nft-pfp`. The backend now derives the collection slug from the resolved NFT instead of trusting a client-supplied value, so the CLI no longer needs to collect or send it.
+- Updated dependencies [4dd7c67]
+- Updated dependencies [280acf2]
+- Updated dependencies [d88963f]
+  - @opensea/sdk@11.7.3
+  - @opensea/api-types@0.8.8
+
 ## 1.17.1
 
 ### Patch Changes
