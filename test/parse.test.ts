@@ -1,8 +1,12 @@
+﻿import { mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import {
   parseFloatOption,
   parseIntOption,
   parseTraitsOption,
+  readJsonBodyOption,
 } from "../src/parse.js"
 
 describe("parseIntOption", () => {
@@ -42,6 +46,43 @@ describe("parseFloatOption", () => {
     expect(() => parseFloatOption("", "--slippage")).toThrow(
       'Invalid value for --slippage: "" is not a number',
     )
+  })
+})
+
+describe("readJsonBodyOption", () => {
+  const tmpDir = join(tmpdir(), "opensea-cli-test-" + Date.now())
+
+  it("reads and parses a valid JSON file", () => {
+    mkdirSync(tmpDir, { recursive: true })
+    const filePath = join(tmpDir, "valid.json")
+    writeFileSync(filePath, JSON.stringify({ key: "value", num: 100 }))
+
+    const result = readJsonBodyOption<{ key: string; num: number }>(
+      filePath,
+      "--body",
+    )
+    expect(result).toEqual({ key: "value", num: 100 })
+
+    rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it("throws formatted error when file does not exist", () => {
+    const nonExistentPath = join(tmpdir(), "non-existent-file-99999.json")
+    expect(() => readJsonBodyOption(nonExistentPath, "--body")).toThrow(
+      `Could not read --body from '${nonExistentPath}'`,
+    )
+  })
+
+  it("throws formatted error when file contains invalid JSON", () => {
+    mkdirSync(tmpDir, { recursive: true })
+    const filePath = join(tmpDir, "invalid.json")
+    writeFileSync(filePath, "{ invalid json structure }")
+
+    expect(() => readJsonBodyOption(filePath, "--body")).toThrow(
+      `Could not parse --body '${filePath}' as JSON`,
+    )
+
+    rmSync(tmpDir, { recursive: true, force: true })
   })
 })
 
