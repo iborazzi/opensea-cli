@@ -55,11 +55,11 @@ Wallet-authenticated endpoints also require a scoped token:
 
 ```bash
 export OPENSEA_PRIVATE_KEY="..."
-opensea login --private-key --scopes read:favorites,write:wallets
+opensea login --private-key --scopes read:favorites,read:wallets,write:wallets
 WALLET=$(opensea --format json whoami | jq -r '.address')
 opensea api request GET "/api/v2/account/$WALLET/favorites" --params '{"limit":1}'
-opensea accounts mark-agent "$WALLET"
-opensea accounts remove-agent "$WALLET"
+opensea agent declare
+opensea agent list
 opensea auth revoke
 ```
 
@@ -113,7 +113,8 @@ opensea --format table collections stats mfers
 | `search` | Search collections, NFTs, tokens, and accounts |
 | `tokens` | Get trending tokens, top tokens, token details, and activity stats |
 | `swaps` | Get swap quotes for token trading |
-| `accounts` | Get account details and manage agent wallet designations |
+| `accounts` | Get account details |
+| `agent` | Declare an agent account and run the ownership handshake |
 | `whoami` | Show the current wallet, scopes, and scope source |
 | `api request` | Call any API v2 endpoint with the active API key and wallet JWT |
 
@@ -141,8 +142,8 @@ const activity = await client.tokens.activityStats(
   { windows: ["1h", "24h"] },
 )
 const results = await client.search.collections("mfers", { limit: 5 })
-const markedAgent = await client.accounts.markAgent("0x123...")
-const clearedAgent = await client.accounts.removeAgent("0x123...")
+const declared = await client.agent.declare()
+const { relationships } = await client.agent.list()
 
 // Error handling
 try {

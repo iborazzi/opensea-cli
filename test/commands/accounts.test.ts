@@ -28,39 +28,12 @@ describe("accountsCommand", () => {
     expect(cmd.name()).toBe("accounts")
     const subcommands = cmd.commands.map(c => c.name())
     expect(subcommands).toContain("get")
-    expect(subcommands).toContain("mark-agent")
-    expect(subcommands).toContain("remove-agent")
+    // The retired wallet-level designation, removed with the rest of the model.
+    expect(subcommands).not.toContain("mark-agent")
+    expect(subcommands).not.toContain("remove-agent")
     expect(subcommands).toContain("make-private")
     expect(subcommands).toContain("make-public")
     expect(subcommands).toContain("agent-relationships")
-  })
-
-  it("mark-agent marks a registered wallet", async () => {
-    ctx.mockClient.put.mockResolvedValue({
-      address: "0xabc",
-      is_agent: true,
-    })
-
-    const cmd = accountsCommand(ctx.getClient, ctx.getFormat)
-    await cmd.parseAsync(["mark-agent", "agent/wallet"], { from: "user" })
-
-    expect(ctx.mockClient.put).toHaveBeenCalledWith(
-      "/api/v2/accounts/wallets/agent%2Fwallet/agent",
-    )
-  })
-
-  it("remove-agent clears a registered wallet designation", async () => {
-    ctx.mockClient.delete.mockResolvedValue({
-      address: "0xabc",
-      is_agent: false,
-    })
-
-    const cmd = accountsCommand(ctx.getClient, ctx.getFormat)
-    await cmd.parseAsync(["remove-agent", "agent/wallet"], { from: "user" })
-
-    expect(ctx.mockClient.delete).toHaveBeenCalledWith(
-      "/api/v2/accounts/wallets/agent%2Fwallet/agent",
-    )
   })
 
   it("make-private marks a registered wallet as private", async () => {

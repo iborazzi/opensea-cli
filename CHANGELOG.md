@@ -1,5 +1,64 @@
 # @opensea/cli
 
+## 2.0.0
+
+### Major Changes
+
+- 75aa2c2: **Breaking:** removes the retired wallet-level agent designation.
+
+  SDK: `WalletAuthAPI.markWalletAsAgent` and `WalletAuthAPI.removeWalletAgentDesignation` are gone. CLI: `opensea accounts mark-agent` and `opensea accounts remove-agent`, along with `client.accounts.markAgent` and `client.accounts.removeAgent` on `OpenSeaCLI`.
+
+  The endpoints they called, `PUT` and `DELETE /api/v2/accounts/wallets/{wallet}/agent`, no longer exist. os2-core removed them in ProjectOpenSea/os2-core#52946: over the 7 days before that, every `PUT` was rejected with 403 by a kill switch and no wallet's agent flag changed at all. Keeping the methods would mean shipping calls that 404.
+
+  An agent is an account, not a flag on a wallet. Use `declareAgentAccount`, `withdrawAgentAccountDeclaration`, and the `proposeAgentRelationship` / `confirmAgentRelationship` / `revokeAgentRelationship` handshake, or the `opensea agent` command group. Both are unchanged by this release.
+
+  `WalletAgentStatusResponse` is no longer re-exported from the CLI's `types/api`, since the schema goes away with the next spec sync.
+
+### Minor Changes
+
+- 6c0ee99: Add SDK and CLI support for agent accounts, so an agent can declare itself and complete the ownership handshake without hand-rolling HTTP.
+
+  An agent is an account, not a flag on a wallet. Ownership is a relationship between two accounts, mutually confirmed. It is a declaration, not an authorization: naming an account as your agent grants it no ability to act for you. It is self-reported and OpenSea does not verify it. An agent can have no owner at all, and at most one confirmed owner. Either side may withdraw or revoke at any time, which deletes the relationship. Only confirmed relationships are public.
+
+  SDK, on `WalletAuthAPI`: `declareAgentAccount`, `withdrawAgentAccountDeclaration`, `proposeAgentRelationship`, `confirmAgentRelationship`, `revokeAgentRelationship`, and `listOwnAgentRelationships`. `AccountsAPI.getAgentProfileRelationships` already covered the public read.
+
+  CLI, a new `agent` group: `declare`, `withdraw`, `propose`, `confirm`, `revoke`, `list`, and `profile`, plus a matching `client.agent` namespace on `OpenSeaCLI`.
+
+  The scopes differ, which is easy to get wrong. Every write takes `write:wallets` but listing your own relationships takes `read:wallets`, so a client driving the whole handshake must request both or the list call returns 403. `read:wallets` is now in `OPENSEA_SCOPES`, so the default OAuth grant carries it.
+
+  The OpenAPI snapshot is refreshed to generate all of this. That also picks up `read:wallets` in `AuthScope`, which was already live in the scope registry but missing from the committed snapshot, so `scripts/check-auth-scope-drift.mjs` was failing on main beforehand.
+
+  `AgentProfileRelationshipsResponse` no longer surfaces `agent_owner_profile` or `public_agent_wallets`. Both read the retired wallet-level designation, are permanently null and empty, and are removed by os2-core AGE-51. Read `agentOwner` and `agents` instead.
+
+  `markWalletAsAgent` and `removeWalletAgentDesignation` are deprecated. They set a flag on a wallet rather than declaring an account, and the server now rejects new designations; only the removal still works, so an account that set the old flag can clear it.
+
+### Patch Changes
+
+- ddadb41: Replace five hand-rolled API types with the generated ones from `@opensea/api-types`.
+
+  `packages/cli/AGENTS.md` and `packages/api-types/AGENTS.md` both say never to hand-roll API request or response types, but these five predate the rule and duplicated schemas the spec already covered.
+
+  In the SDK: `GetChainsResponse` becomes `Camelize<ChainListResponse>`, `DropMintRequest` and `DropMintResponse` become `Camelize<>` of the identically named generated schemas, `ResolveAccountResponse` becomes `Camelize<AccountResolveResponse>`, and `ValidateMetadataResponse` becomes `Camelize<>` of the generated schema, which decomposes into `ValidateMetadataAssetIdentifier`, `ValidateMetadataDetails`, `ValidateMetadataAttribute` and `MetadataIngestionError`. In the CLI: `ValidateMetadataResponse` becomes a `Schemas[...]` re-export, the one declared violation in a file that is otherwise all re-exports.
+
+  No shape change. Each replacement was diffed field by field against the spec, including required and optional, and they match exactly, so this is types-only with no runtime or behavioral effect. Four of the five were already correct re-exports in the CLI and hand-rolled only in the SDK, so the two packages had disagreed about the same names.
+
+- ad6de0c: `type-check` now covers this package's `test/` directory, through a `tsconfig.check.json` matching the one sdk and api-types already use. It previously compiled `src/` only, so nothing typechecked its test files.
+
+  That gap hid real breakage, because vitest erases types rather than resolving them. `cli/test/sdk-swaps.test.ts` imported `WalletAdapter` from `../src/wallet/adapter.js`, a module that does not exist, and the suite passed. Repointing it at the module that does export the type then surfaced a second error the first had masked: the test's fake wallet omits `capabilities`, which `WalletAdapter` requires. Both fixed, plus two `fetch` spies typed as bare `ReturnType<typeof vi.spyOn>`, which discards the signature.
+
+  The tool-sdk and wallet-adapters halves of the same change are split into their own changesets, since
+  both packages are held out of this release.
+
+- Updated dependencies [6c0ee99]
+- Updated dependencies [75aa2c2]
+- Updated dependencies [ddadb41]
+- Updated dependencies [cfbb465]
+- Updated dependencies [6e77b5e]
+- Updated dependencies [f74c0be]
+- Updated dependencies [5fdac00]
+  - @opensea/sdk@12.0.0
+  - @opensea/api-types@0.8.10
+
 ## 1.18.0
 
 ### Minor Changes

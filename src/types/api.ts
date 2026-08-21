@@ -246,35 +246,7 @@ export type TransactionReceiptResponse = Schemas["TransactionReceiptResponse"]
 export type SweepCollectionRequest = Schemas["SweepCollectionRequest"]
 export type SweepCollectionResponse = Schemas["SweepCollectionResponse"]
 
-export interface ValidateMetadataResponse {
-  assetIdentifier: {
-    chain: string
-    contractAddress: string
-    tokenId: string
-  }
-  tokenUri?: string
-  metadata?: {
-    name?: string
-    description?: string
-    originalImageUrl?: string
-    processedImageUrl?: string
-    originalAnimationUrl?: string
-    processedAnimationUrl?: string
-    externalUrl?: string
-    backgroundColor?: string
-    attributes: {
-      traitType: string
-      value: string
-      displayType?: string
-    }[]
-  }
-  error?: {
-    errorType: string
-    message: string
-    url?: string
-    statusCode?: number
-  }
-}
+export type ValidateMetadataResponse = Schemas["ValidateMetadataResponse"]
 
 // ── Scoped-token write endpoints (social, favorites, orders, profile,
 //    drops, collections, wallets) ────────────────────────────────────
@@ -283,10 +255,28 @@ export type WatchlistRequest = Schemas["WatchlistRequest"]
 export type FavoriteResponse = Schemas["FavoriteResponse"]
 export type CancelRequest = Schemas["CancelRequest"]
 export type WalletUnlinkResponse = Schemas["WalletUnlinkResponse"]
-export type WalletAgentStatusResponse = Schemas["WalletAgentStatusResponse"]
 export type WalletVisibilityResponse = Schemas["WalletVisibilityResponse"]
 export type AgentProfileRelationshipsResponse =
   Schemas["AgentProfileRelationshipsResponse"]
+
+// ── Agent accounts ──────────────────────────────────────────────────
+// An agent is an account, not a flag on a wallet. Ownership is a
+// relationship between two accounts that both sides confirm.
+
+export type AgentAccountStatusResponse = Schemas["AgentAccountStatusResponse"]
+export type AgentRelationshipResponse = Schemas["AgentRelationshipResponse"]
+export type AgentRelationshipMutationResponse =
+  Schemas["AgentRelationshipMutationResponse"]
+export type AgentRelationshipListResponse =
+  Schemas["AgentRelationshipListResponse"]
+export type AgentRelationshipRemovalResponse =
+  Schemas["AgentRelationshipRemovalResponse"]
+export type ProposeAgentRelationshipRequestBody =
+  Schemas["ProposeAgentRelationshipRequestBody"]
+/** Which side of an agent relationship the caller is on. */
+export type AgentRelationshipRole =
+  ProposeAgentRelationshipRequestBody["caller_role"]
+
 export type SvmInstructionAccountResponse =
   Schemas["SvmInstructionAccountResponse"]
 export type SvmInstructionResponse = Schemas["SvmInstructionResponse"]

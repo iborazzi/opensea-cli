@@ -175,6 +175,33 @@ describe("OpenSeaClient", () => {
 
       await expect(client.delete("/api/v2/scoped")).resolves.toBeUndefined()
     })
+
+    // Endpoints whose DELETE arguments are query parameters rather than a body
+    // rely on this: fetch, OkHttp and urllib all drop DELETE bodies by default
+    // and proxies may strip them, so a caller passing params must get them on
+    // the URL and must not get a body.
+    it("puts DELETE params on the URL and sends no body", async () => {
+      mockFetchResponse({ removed: true })
+
+      await client.delete("/api/v2/accounts/agent-relationships", undefined, {
+        counterparty_address: "0xowner",
+        caller_role: "AGENT",
+      })
+
+      const [rawUrl, init] = vi.mocked(fetch).mock.calls[0] as [
+        string,
+        RequestInit,
+      ]
+      const url = new URL(rawUrl)
+      expect(url.pathname).toBe("/api/v2/accounts/agent-relationships")
+      expect(url.searchParams.get("counterparty_address")).toBe("0xowner")
+      expect(url.searchParams.get("caller_role")).toBe("AGENT")
+      expect(init.method).toBe("DELETE")
+      expect(init.body).toBeUndefined()
+      expect(
+        (init.headers as Record<string, string>)["Content-Type"],
+      ).toBeUndefined()
+    })
   })
 
   describe("retry", () => {

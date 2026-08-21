@@ -45,6 +45,7 @@ describe("OpenSeaCLI", () => {
       expect(sdk.offers).toBeDefined()
       expect(sdk.events).toBeDefined()
       expect(sdk.accounts).toBeDefined()
+      expect(sdk.agent).toBeDefined()
       expect(sdk.tokens).toBeDefined()
       expect(sdk.search).toBeDefined()
       expect(sdk.swaps).toBeDefined()
@@ -391,6 +392,64 @@ describe("OpenSeaCLI", () => {
     })
   })
 
+  describe("agent", () => {
+    it("declare puts to the account-level agent endpoint", async () => {
+      mockPut.mockResolvedValue({ is_agent: true, changed: true })
+      await sdk.agent.declare()
+      expect(mockPut).toHaveBeenCalledWith("/api/v2/accounts/agent")
+    })
+
+    it("withdraw deletes the declaration", async () => {
+      mockDelete.mockResolvedValue({ is_agent: false, changed: true })
+      await sdk.agent.withdraw()
+      expect(mockDelete).toHaveBeenCalledWith("/api/v2/accounts/agent")
+    })
+
+    it("propose sends the counterparty and the caller's own role", async () => {
+      mockPost.mockResolvedValue({ relation: {}, created: true })
+      await sdk.agent.propose("0xowner", "AGENT")
+      expect(mockPost).toHaveBeenCalledWith(
+        "/api/v2/accounts/agent-relationships",
+        { counterparty_address: "0xowner", caller_role: "AGENT" },
+      )
+    })
+
+    it("confirm posts to the confirm sub-path", async () => {
+      mockPost.mockResolvedValue({ relation: {}, created: false })
+      await sdk.agent.confirm("0xagent", "OWNER")
+      expect(mockPost).toHaveBeenCalledWith(
+        "/api/v2/accounts/agent-relationships/confirm",
+        { counterparty_address: "0xagent", caller_role: "OWNER" },
+      )
+    })
+
+    it("revoke sends query params and no body", async () => {
+      mockDelete.mockResolvedValue({ removed: true })
+      await sdk.agent.revoke("0xowner", "AGENT")
+      expect(mockDelete).toHaveBeenCalledWith(
+        "/api/v2/accounts/agent-relationships",
+        undefined,
+        { counterparty_address: "0xowner", caller_role: "AGENT" },
+      )
+    })
+
+    it("list reads the caller's own relationships", async () => {
+      mockGet.mockResolvedValue({ relationships: [] })
+      await sdk.agent.list()
+      expect(mockGet).toHaveBeenCalledWith(
+        "/api/v2/accounts/agent-relationships",
+      )
+    })
+
+    it("profile reads the public relationships for an identifier", async () => {
+      mockGet.mockResolvedValue({})
+      await sdk.agent.profile("alice/example")
+      expect(mockGet).toHaveBeenCalledWith(
+        "/api/v2/accounts/alice%2Fexample/agent-relationships",
+      )
+    })
+  })
+
   describe("accounts", () => {
     it("get calls correct endpoint", async () => {
       mockGet.mockResolvedValue({ address: "0xabc" })
@@ -403,22 +462,6 @@ describe("OpenSeaCLI", () => {
       await sdk.accounts.resolve("vitalik.eth")
       expect(mockGet).toHaveBeenCalledWith(
         "/api/v2/accounts/resolve/vitalik.eth",
-      )
-    })
-
-    it("markAgent calls the wallet agent PUT endpoint", async () => {
-      mockPut.mockResolvedValue({ address: "0xabc", is_agent: true })
-      await sdk.accounts.markAgent("agent/wallet")
-      expect(mockPut).toHaveBeenCalledWith(
-        "/api/v2/accounts/wallets/agent%2Fwallet/agent",
-      )
-    })
-
-    it("removeAgent calls the wallet agent DELETE endpoint", async () => {
-      mockDelete.mockResolvedValue({ address: "0xabc", is_agent: false })
-      await sdk.accounts.removeAgent("agent/wallet")
-      expect(mockDelete).toHaveBeenCalledWith(
-        "/api/v2/accounts/wallets/agent%2Fwallet/agent",
       )
     })
 

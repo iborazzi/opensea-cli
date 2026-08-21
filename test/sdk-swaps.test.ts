@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { OpenSeaClient } from "../src/client.js"
 import { OpenSeaCLI } from "../src/sdk.js"
-import type { WalletAdapter } from "../src/wallet/adapter.js"
+import type { WalletAdapter } from "../src/wallet/index.js"
 
 vi.mock("../src/client.js", async importOriginal => {
   const actual = await importOriginal<typeof import("../src/client.js")>()
@@ -21,6 +21,14 @@ function createMockWallet(
 ): WalletAdapter & { sendTransaction: ReturnType<typeof vi.fn> } {
   return {
     name: "mock",
+    // Required by WalletAdapter. This fake never exercises the optional signing
+    // methods, so every capability is declared false.
+    capabilities: {
+      signMessage: false,
+      signTypedData: false,
+      managedGas: false,
+      managedNonce: false,
+    },
     getAddress: vi.fn().mockResolvedValue(address),
     sendTransaction: vi.fn().mockResolvedValue({ hash: "0xabc123" }),
   }

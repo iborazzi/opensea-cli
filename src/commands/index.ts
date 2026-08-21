@@ -1,4 +1,5 @@
 export { accountsCommand } from "./accounts.js"
+export { agentCommand } from "./agent.js"
 export { apiCommand } from "./api.js"
 export { assetsCommand } from "./assets.js"
 export { authCommand } from "./auth.js"

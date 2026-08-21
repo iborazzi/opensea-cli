@@ -1,9 +1,10 @@
+import type { MockInstance } from "vitest"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { authCommand } from "../../src/commands/auth.js"
 import { createCommandTestContext } from "../mocks.js"
 
 describe("authCommand", () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn>
+  let fetchSpy: MockInstance<typeof fetch>
 
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, "fetch")

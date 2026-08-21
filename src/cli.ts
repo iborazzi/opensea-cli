@@ -3,6 +3,7 @@ import { loadCurrentToken } from "./auth/store.js"
 import { OpenSeaAPIError, OpenSeaClient } from "./client.js"
 import {
   accountsCommand,
+  agentCommand,
   apiCommand,
   assetsCommand,
   authCommand,
@@ -149,6 +150,7 @@ program.addCommand(offersCommand(getClient, getFormat))
 program.addCommand(ordersCommand(getClient, getFormat))
 program.addCommand(eventsCommand(getClient, getFormat))
 program.addCommand(accountsCommand(getClient, getFormat))
+program.addCommand(agentCommand(getClient, getFormat))
 program.addCommand(profileCommand(getClient, getFormat))
 program.addCommand(tokensCommand(getClient, getFormat))
 program.addCommand(tokenGroupsCommand(getClient, getFormat))

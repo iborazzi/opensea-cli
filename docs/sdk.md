@@ -137,8 +137,40 @@ const { asset_events, next } = await client.events.byNFT(
 
 ```typescript
 const account = await client.accounts.get("0x123...")
-const markedAgent = await client.accounts.markAgent("0x123...")
-const clearedAgent = await client.accounts.removeAgent("0x123...")
+```
+
+## Agent accounts
+
+An agent is an account, not a flag on a wallet, and ownership is a
+relationship between two accounts that both sides confirm. It is a
+declaration, not an authorization: naming an account as your agent grants it
+nothing. It is self-reported rather than verified by OpenSea.
+
+```typescript
+// Requires write:wallets.
+const declared = await client.agent.declare() // { is_agent, changed }
+const proposal = await client.agent.propose("0xowner...", "AGENT")
+const confirmed = await client.agent.confirm("0xagent...", "OWNER")
+const revoked = await client.agent.revoke("0xowner...", "AGENT") // { removed }
+const withdrawn = await client.agent.withdraw()
+
+// Requires read:wallets, not write:wallets.
+const { relationships } = await client.agent.list()
+
+// Public read, API key only.
+const publicView = await client.agent.profile("imatestagent123")
+```
+
+The role argument is the caller's own side: `"AGENT"` means "I am an agent and
+the counterparty owns me". Proposing a relationship that is already awaiting
+you confirms it, so a client that cannot tell who moved first can just call
+`propose`. `changed` and `created` are false when the call was a no-op, which
+makes a retry distinguishable from a real change.
+
+Log in with both scopes or `agent.list()` returns 403:
+
+```typescript
+// opensea login --private-key --scopes read:wallets,write:wallets
 ```
 
 ## Tokens

@@ -1,3 +1,4 @@
+import type { MockInstance } from "vitest"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { walletCommand } from "../../src/commands/wallet.js"
 
@@ -10,7 +11,7 @@ const PRIVY_ENV = {
 describe("walletCommand", () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-  let fetchSpy: ReturnType<typeof vi.spyOn>
+  let fetchSpy: MockInstance<typeof fetch>
 
   beforeEach(() => {
     consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})

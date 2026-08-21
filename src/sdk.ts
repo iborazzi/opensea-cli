@@ -3,7 +3,12 @@ import { checkHealth } from "./health.js"
 import type {
   Account,
   AccountResolveResponse,
+  AgentAccountStatusResponse,
   AgentProfileRelationshipsResponse,
+  AgentRelationshipListResponse,
+  AgentRelationshipMutationResponse,
+  AgentRelationshipRemovalResponse,
+  AgentRelationshipRole,
   AssetEvent,
   AssetMetadataResponse,
   BatchCollectionsRequest,
@@ -77,7 +82,6 @@ import type {
   TransferRequest,
   TransferResponse,
   ValidateMetadataResponse,
-  WalletAgentStatusResponse,
   WalletPnlResponse,
   WalletVisibilityResponse,
 } from "./types/index.js"
@@ -137,6 +141,7 @@ export class OpenSeaCLI {
   readonly offers: OffersAPI
   readonly events: EventsAPI
   readonly accounts: AccountsAPI
+  readonly agent: AgentAPI
   readonly tokens: TokensAPI
   readonly search: SearchAPI
   readonly swaps: SwapsAPI
@@ -155,6 +160,7 @@ export class OpenSeaCLI {
     this.offers = new OffersAPI(this.client)
     this.events = new EventsAPI(this.client)
     this.accounts = new AccountsAPI(this.client)
+    this.agent = new AgentAPI(this.client)
     this.tokens = new TokensAPI(this.client)
     this.search = new SearchAPI(this.client)
     this.swaps = new SwapsAPI(this.client)
@@ -687,18 +693,6 @@ class AccountsAPI {
     return this.client.get(`/api/v2/accounts/${address}`)
   }
 
-  async markAgent(wallet: string): Promise<WalletAgentStatusResponse> {
-    return this.client.put(
-      `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/agent`,
-    )
-  }
-
-  async removeAgent(wallet: string): Promise<WalletAgentStatusResponse> {
-    return this.client.delete(
-      `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/agent`,
-    )
-  }
-
   async makePrivate(wallet: string): Promise<WalletVisibilityResponse> {
     return this.client.put(
       `/api/v2/accounts/wallets/${encodeURIComponent(wallet)}/private`,
@@ -889,6 +883,109 @@ class AccountsAPI {
       limit: options?.limit,
       chains: options?.chains?.join(","),
     })
+  }
+}
+
+/**
+ * Agent accounts and the two-sided ownership handshake.
+ *
+ * An agent is an account, not a flag on a wallet. Ownership is a relationship
+ * between two accounts that both sides confirm. It is a declaration, not an
+ * authorization: naming an account as your agent grants it no ability to act
+ * for you. It is self-reported and OpenSea does not verify it.
+ *
+ * An agent can have no owner at all, and at most one confirmed owner. Either
+ * side may withdraw or revoke at any time, which deletes the relationship.
+ * Only confirmed relationships are public; a pending proposal is visible to
+ * the two parties alone.
+ *
+ * The writes need the `write:wallets` scope and {@link AgentAPI.list} needs
+ * `read:wallets`. Authenticate with both or the list call returns 403
+ * "Insufficient permissions".
+ */
+class AgentAPI {
+  constructor(private client: OpenSeaClient) {}
+
+  /**
+   * Declare the authenticated account an agent. `changed` is false when it
+   * already was one.
+   */
+  async declare(): Promise<AgentAccountStatusResponse> {
+    return this.client.put("/api/v2/accounts/agent")
+  }
+
+  /** Withdraw the authenticated account's agent declaration. */
+  async withdraw(): Promise<AgentAccountStatusResponse> {
+    return this.client.delete("/api/v2/accounts/agent")
+  }
+
+  /**
+   * Propose a relationship. `callerRole` is the caller's own side: `AGENT`
+   * means "I am an agent and this account owns me".
+   *
+   * Proposing something already awaiting you confirms it, so a client that
+   * cannot tell who moved first can just call this.
+   */
+  async propose(
+    counterpartyAddress: string,
+    callerRole: AgentRelationshipRole,
+  ): Promise<AgentRelationshipMutationResponse> {
+    return this.client.post("/api/v2/accounts/agent-relationships", {
+      counterparty_address: counterpartyAddress,
+      caller_role: callerRole,
+    })
+  }
+
+  /** Confirm a relationship proposed to the authenticated account. */
+  async confirm(
+    counterpartyAddress: string,
+    callerRole: AgentRelationshipRole,
+  ): Promise<AgentRelationshipMutationResponse> {
+    return this.client.post("/api/v2/accounts/agent-relationships/confirm", {
+      counterparty_address: counterpartyAddress,
+      caller_role: callerRole,
+    })
+  }
+
+  /**
+   * Withdraw a proposal or revoke a confirmed relationship. `removed` is
+   * false when no such relationship existed.
+   *
+   * Sent as query parameters rather than a body because fetch, OkHttp and
+   * urllib all drop DELETE bodies by default and proxies may strip them.
+   */
+  async revoke(
+    counterpartyAddress: string,
+    callerRole: AgentRelationshipRole,
+  ): Promise<AgentRelationshipRemovalResponse> {
+    return this.client.delete(
+      "/api/v2/accounts/agent-relationships",
+      undefined,
+      {
+        counterparty_address: counterpartyAddress,
+        caller_role: callerRole,
+      },
+    )
+  }
+
+  /**
+   * List the authenticated account's own relationships, including proposals
+   * still awaiting either side. Requires `read:wallets`.
+   */
+  async list(): Promise<AgentRelationshipListResponse> {
+    return this.client.get("/api/v2/accounts/agent-relationships")
+  }
+
+  /**
+   * Public agent relationships for any profile. API key only, no wallet auth.
+   * Shows confirmed relationships alone.
+   */
+  async profile(
+    addressOrUsername: string,
+  ): Promise<AgentProfileRelationshipsResponse> {
+    return this.client.get(
+      `/api/v2/accounts/${encodeURIComponent(addressOrUsername)}/agent-relationships`,
+    )
   }
 }
 

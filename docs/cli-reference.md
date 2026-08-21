@@ -146,11 +146,61 @@ opensea swaps quote --from-chain <chain> --from-address <address> --to-chain <ch
 
 ```bash
 opensea accounts get <address>
-opensea accounts mark-agent <wallet>
-opensea accounts remove-agent <wallet>
 ```
 
-Agent designation commands require a wallet-authenticated token with the
-`write:wallets` scope.
+The wallet-level agent designation used to live here as `mark-agent` and
+`remove-agent`. An agent is an account now, so use the `agent` commands below.
+
+## Agent accounts
+
+```bash
+opensea agent declare
+opensea agent withdraw
+opensea agent propose <counterparty_address> --role AGENT|OWNER
+opensea agent confirm <counterparty_address> --role AGENT|OWNER
+opensea agent revoke <counterparty_address> --role AGENT|OWNER
+opensea agent list
+opensea agent profile <address_or_username>
+```
+
+An agent is an account, not a flag on a wallet. Ownership is a relationship
+between two accounts that both sides confirm. Three things it is not:
+
+- Not sub-accounts. Declaring yourself an agent creates no new account type.
+- Not delegation. "X is my agent" grants X no ability to act for the owner. It
+  is a declaration, not an authorization.
+- Not verification. It is self-reported and OpenSea does not check it.
+
+An agent can have no owner at all, and at most one confirmed owner. Either
+side may withdraw or revoke at any time, which deletes the relationship. Only
+confirmed relationships are public; a pending proposal is visible to the two
+parties alone.
+
+`--role` is the side *you* are on. `--role AGENT` means "I am an agent and the
+counterparty owns me".
+
+The writes need `write:wallets` and `agent list` needs `read:wallets`, so a
+client driving the whole handshake must log in with both:
+
+```bash
+opensea login --private-key --scopes read:wallets,write:wallets
+```
+
+With only `write:wallets`, `agent list` fails with 403 "Insufficient
+permissions". `agent profile` is a public read and needs an API key alone.
+
+Proposing a relationship that is already awaiting you confirms it, so a client
+that cannot tell who moved first can just call `propose`:
+
+```bash
+# On the agent, declaring itself and asking the owner to confirm.
+opensea agent declare
+opensea agent propose 0xOWNER --role AGENT
+opensea agent list   # status PENDING_OWNER, awaiting_confirmation_from OWNER
+
+# On the owner. Either of these lands the same confirmed relationship.
+opensea agent confirm 0xAGENT --role OWNER
+opensea agent propose 0xAGENT --role OWNER
+```
 
 > REST list commands support cursor-based pagination. The search command returns a flat list with no cursor. See [pagination.md](pagination.md) for details.
